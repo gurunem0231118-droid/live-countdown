@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = await file.arrayBuffer();
 
-    const { data, error } = await supabaseAdmin.storage
+    const { error } = await supabaseAdmin.storage
       .from("timer-backgrounds")
       .upload(filename, buffer, {
         contentType: file.type,
