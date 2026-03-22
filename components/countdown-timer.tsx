@@ -10,6 +10,8 @@ type TimerApiResponse = {
   background_color?: string | null;
   background_image_url?: string | null;
   text_color?: string | null;
+  background_brightness?: number;
+  background_transparency?: number;
 };
 
 type CountdownState = {
@@ -52,11 +54,15 @@ export default function CountdownTimer() {
   const [backgroundColor, setBackgroundColor] = useState("#020617");
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
   const [textColor, setTextColor] = useState("#f4f4f5");
+  const [backgroundBrightness, setBackgroundBrightness] = useState(130);
+  const [backgroundTransparency, setBackgroundTransparency] = useState(100);
 
   function applyThemeState(payload: TimerApiResponse) {
     setBackgroundColor(payload.background_color ?? "#020617");
     setBackgroundImageUrl(payload.background_image_url ?? null);
     setTextColor(payload.text_color ?? "#f4f4f5");
+    setBackgroundBrightness(payload.background_brightness ?? 130);
+    setBackgroundTransparency(payload.background_transparency ?? 100);
   }
 
   function applyTimerState(nextTargetTime: string | null, nextIsActive: boolean) {
@@ -220,14 +226,14 @@ export default function CountdownTimer() {
         style={{
           backgroundColor,
           backgroundImage: backgroundImageUrl
-            ? `linear-gradient(rgba(2,6,23,0.45), rgba(2,6,23,0.65)), url("${backgroundImageUrl}")`
+            ? `url("${backgroundImageUrl}")`
             : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          filter: `brightness(${backgroundBrightness}%)`,
+          opacity: backgroundTransparency / 100,
         }}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18)_0%,rgba(255,255,255,0)_48%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,rgba(15,23,42,0.15)_20%,rgba(2,6,23,0.75)_70%)]" />
         <p className="text-center text-3xl font-semibold tracking-wide sm:text-5xl" style={{ color: textColor }}>
           {hasEnded ? "Timer Ended" : "Waiting to Start"}
         </p>
@@ -241,14 +247,14 @@ export default function CountdownTimer() {
       style={{
         backgroundColor,
         backgroundImage: backgroundImageUrl
-          ? `linear-gradient(rgba(2,6,23,0.45), rgba(2,6,23,0.65)), url("${backgroundImageUrl}")`
+          ? `url("${backgroundImageUrl}")`
           : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        filter: `brightness(${backgroundBrightness}%)`,
+        opacity: backgroundTransparency / 100,
       }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0)_42%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.1)_0%,rgba(2,6,23,0.75)_72%)]" />
       <div className="grid w-full max-w-5xl grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
         {units.map((unit) => (
           <article
