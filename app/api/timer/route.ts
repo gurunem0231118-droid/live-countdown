@@ -9,6 +9,8 @@ type TimerPayload = {
   background_color?: string | null;
   background_image_url?: string | null;
   text_color?: string | null;
+  background_brightness?: number;
+  background_transparency?: number;
 };
 
 export async function GET() {
@@ -22,7 +24,7 @@ export async function GET() {
 
   const { data, error } = await client
     .from("timer_state")
-    .select("target_time,is_active,background_color,background_image_url,text_color")
+    .select("target_time,is_active,background_color,background_image_url,text_color,background_brightness,background_transparency")
     .eq("id", 1)
     .single();
 
@@ -45,12 +47,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const { target_time, is_active, background_color, background_image_url, text_color } = payload;
+  const { target_time, is_active, background_color, background_image_url, text_color, background_brightness, background_transparency } = payload;
 
   const hasStyleUpdate =
     background_color !== undefined ||
     background_image_url !== undefined ||
-    text_color !== undefined;
+    text_color !== undefined ||
+    background_brightness !== undefined ||
+    background_transparency !== undefined;
 
   const hasTimerUpdate = target_time !== undefined || is_active !== undefined;
 
@@ -86,7 +90,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const updatePayload: Record<string, string | boolean | null> = {};
+  const updatePayload: Record<string, string | boolean | null | number> = {};
 
   if (target_time !== undefined) {
     updatePayload.target_time = target_time ?? null;
@@ -106,6 +110,14 @@ export async function POST(request: Request) {
 
   if (text_color !== undefined) {
     updatePayload.text_color = text_color ?? null;
+  }
+
+  if (background_brightness !== undefined) {
+    updatePayload.background_brightness = background_brightness;
+  }
+
+  if (background_transparency !== undefined) {
+    updatePayload.background_transparency = background_transparency;
   }
 
   // Prefer using a server-side service role key for updates so RLS doesn't block.
@@ -129,7 +141,7 @@ export async function POST(request: Request) {
     .from("timer_state")
     .update(updatePayload)
     .eq("id", 1)
-    .select("target_time,is_active,background_color,background_image_url,text_color")
+    .select("target_time,is_active,background_color,background_image_url,text_color,background_brightness,background_transparency")
     .single();
 
   if (error) {
