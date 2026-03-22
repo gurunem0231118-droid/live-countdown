@@ -20,6 +20,8 @@ type TimerResponse = {
   background_color?: string | null;
   background_image_url?: string | null;
   text_color?: string | null;
+  background_brightness?: number;
+  background_transparency?: number;
   error?: string;
 };
 
@@ -31,6 +33,8 @@ export default function AdminPage() {
   const [backgroundImageUrl, setBackgroundImageUrl] = useState("");
   const [backgroundImageFileName, setBackgroundImageFileName] = useState("");
   const [textColor, setTextColor] = useState("#f4f4f5");
+  const [backgroundBrightness, setBackgroundBrightness] = useState(130);
+  const [backgroundTransparency, setBackgroundTransparency] = useState(100);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +67,8 @@ export default function AdminPage() {
         setBackgroundColor(data.background_color ?? "#020617");
         setBackgroundImageUrl(data.background_image_url ?? "");
         setTextColor(data.text_color ?? "#f4f4f5");
+        setBackgroundBrightness(data.background_brightness ?? 130);
+        setBackgroundTransparency(data.background_transparency ?? 100);
       } catch {
         // no-op: keep defaults
       }
@@ -77,6 +83,8 @@ export default function AdminPage() {
     background_color?: string | null;
     background_image_url?: string | null;
     text_color?: string | null;
+    background_brightness?: number;
+    background_transparency?: number;
   }) {
     setIsLoading(true);
 
@@ -98,7 +106,9 @@ export default function AdminPage() {
         payload.is_active === undefined &&
         (payload.background_color !== undefined ||
           payload.background_image_url !== undefined ||
-          payload.text_color !== undefined);
+          payload.text_color !== undefined ||
+          payload.background_brightness !== undefined ||
+          payload.background_transparency !== undefined);
 
       toast({
         title: wasStyleUpdateOnly ? "Style updated" : "Timer updated",
@@ -203,6 +213,20 @@ export default function AdminPage() {
       background_color: backgroundColor,
       background_image_url: backgroundImageUrl || null,
       text_color: textColor,
+      background_brightness: backgroundBrightness,
+      background_transparency: backgroundTransparency,
+    });
+  }
+
+  async function handleRemoveBackgroundImage() {
+    setBackgroundImageUrl("");
+    setBackgroundImageFileName("");
+    await updateTimer({
+      background_image_url: null,
+    });
+    toast({
+      title: "Background image removed",
+      description: "The background image has been cleared.",
     });
   }
 
@@ -316,6 +340,32 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="brightness">Brightness: {backgroundBrightness}%</Label>
+                    <input
+                      id="brightness"
+                      type="range"
+                      min="0"
+                      max="200"
+                      value={backgroundBrightness}
+                      onChange={(e) => setBackgroundBrightness(Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transparency">Opacity: {backgroundTransparency}%</Label>
+                    <input
+                      id="transparency"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={backgroundTransparency}
+                      onChange={(e) => setBackgroundTransparency(Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="background-image">Background Image</Label>
                   <div className="flex gap-2">
@@ -333,6 +383,16 @@ export default function AdminPage() {
                       disabled={isUploading}
                       className="flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 file:border-0 file:bg-zinc-800 file:px-3 file:py-1 file:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
                     />
+                    {backgroundImageUrl && (
+                      <Button
+                        variant="destructive"
+                        onClick={handleRemoveBackgroundImage}
+                        disabled={isLoading}
+                        className="whitespace-nowrap"
+                      >
+                        Remove Image
+                      </Button>
+                    )}
                   </div>
                   {backgroundImageFileName && (
                     <p className="text-xs text-zinc-400">
@@ -344,6 +404,55 @@ export default function AdminPage() {
                   {isLoading ? "Saving..." : "Save Appearance"}
                 </Button>
               </div>
+
+              <div className="space-y-3 rounded-lg border border-zinc-700/60 bg-zinc-950/40 p-4">
+                <p className="text-sm font-semibold text-zinc-100">Live Preview</p>
+                <div
+                  className="relative flex items-center justify-center rounded-lg overflow-hidden"
+                  style={{
+                    backgroundColor,
+                    backgroundImage: backgroundImageUrl
+                      ? `url("${backgroundImageUrl}")`
+                      : undefined,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    filter: `brightness(${backgroundBrightness}%)`,
+                    opacity: backgroundTransparency / 100,
+                    height: "300px",
+                  }}
+                >
+                  <div className="grid grid-cols-4 gap-2 px-4">
+                    {[
+                      { label: "DAYS", value: "23" },
+                      { label: "HOURS", value: "00" },
+                      { label: "MINUTES", value: "51" },
+                      { label: "SECONDS", value: "00" },
+                    ].map((unit) => (
+                      <div
+                        key={unit.label}
+                        className="rounded-lg bg-zinc-900/70 p-3 text-center"
+                        style={{
+                          backgroundColor: "rgba(24, 24, 27, 0.7)",
+                        }}
+                      >
+                        <p
+                          className="text-xl font-black leading-none"
+                          style={{ color: textColor }}
+                        >
+                          {unit.value}
+                        </p>
+                        <p
+                          className="mt-2 text-xs font-medium uppercase"
+                          style={{ color: textColor, opacity: 0.8 }}
+                        >
+                          {unit.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2">
                 <Button variant="ghost" onClick={handleLogout}>
                   Logout
