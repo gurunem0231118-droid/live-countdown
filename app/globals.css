@@ -12,6 +12,15 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  @media (min-width: 1024px) {
+    .portrait-scroll-bg {
+      background-size: 100% auto !important;
+      background-position: top center !important;
+      background-repeat: no-repeat;
+      min-height: max(100vh, calc(100vw * var(--bg-ratio, 1)));
+    }
+  }
 }
 
 @layer base {
