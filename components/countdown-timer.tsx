@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import { supabase } from "@/lib/supabase";
 
@@ -53,6 +53,7 @@ export default function CountdownTimer() {
   const [remaining, setRemaining] = useState<CountdownState>(EMPTY_COUNTDOWN);
   const [backgroundColor, setBackgroundColor] = useState("#020617");
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
+  const [backgroundAspectRatio, setBackgroundAspectRatio] = useState<number | null>(null);
   const [textColor, setTextColor] = useState("#f4f4f5");
   const [backgroundBrightness, setBackgroundBrightness] = useState(130);
   const [backgroundTransparency, setBackgroundTransparency] = useState(100);
@@ -196,6 +197,29 @@ export default function CountdownTimer() {
     };
   }, [isActive, targetTime]);
 
+  useEffect(() => {
+    if (!backgroundImageUrl) {
+      setBackgroundAspectRatio(null);
+      return;
+    }
+
+    const image = new Image();
+    image.src = backgroundImageUrl;
+
+    image.onload = () => {
+      if (!image.naturalWidth || !image.naturalHeight) {
+        setBackgroundAspectRatio(null);
+        return;
+      }
+
+      setBackgroundAspectRatio(image.naturalHeight / image.naturalWidth);
+    };
+
+    image.onerror = () => {
+      setBackgroundAspectRatio(null);
+    };
+  }, [backgroundImageUrl]);
+
   const units = useMemo(
     () => [
       { label: "Days", value: formatUnit(remaining.days) },
@@ -205,6 +229,20 @@ export default function CountdownTimer() {
     ],
     [remaining]
   );
+
+  const isDesktopPortraitBackground = Boolean(
+    backgroundImageUrl && backgroundAspectRatio && backgroundAspectRatio > 1
+  );
+
+  const sectionStyle: CSSProperties & { "--bg-ratio": string } = {
+    backgroundColor,
+    backgroundImage: backgroundImageUrl ? `url("${backgroundImageUrl}")` : undefined,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    filter: `brightness(${backgroundBrightness}%)`,
+    opacity: backgroundTransparency / 100,
+    "--bg-ratio": backgroundAspectRatio ? String(backgroundAspectRatio) : "1",
+  };
 
   if (isLoading) {
     return (
@@ -222,17 +260,10 @@ export default function CountdownTimer() {
   if (!isActive) {
     return (
       <section
-        className="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-6 py-10"
-        style={{
-          backgroundColor,
-          backgroundImage: backgroundImageUrl
-            ? `url("${backgroundImageUrl}")`
-            : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: `brightness(${backgroundBrightness}%)`,
-          opacity: backgroundTransparency / 100,
-        }}
+        className={`relative flex min-h-screen w-full items-center justify-center px-6 py-10 ${
+          isDesktopPortraitBackground ? "portrait-scroll-bg" : ""
+        }`}
+        style={sectionStyle}
       >
         <p className="text-center text-3xl font-semibold tracking-wide sm:text-5xl" style={{ color: textColor }}>
           {hasEnded ? "Timer Ended" : "Waiting to Start"}
@@ -243,17 +274,10 @@ export default function CountdownTimer() {
 
   return (
     <section
-      className="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-6 py-10"
-      style={{
-        backgroundColor,
-        backgroundImage: backgroundImageUrl
-          ? `url("${backgroundImageUrl}")`
-          : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        filter: `brightness(${backgroundBrightness}%)`,
-        opacity: backgroundTransparency / 100,
-      }}
+      className={`relative flex min-h-screen w-full items-center justify-center px-6 py-10 ${
+        isDesktopPortraitBackground ? "portrait-scroll-bg" : ""
+      }`}
+      style={sectionStyle}
     >
       <div className="grid w-full max-w-5xl grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
         {units.map((unit) => (
